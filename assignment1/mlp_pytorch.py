@@ -22,6 +22,7 @@ from __future__ import division
 from __future__ import print_function
 
 import torch.nn as nn
+import torch 
 from collections import OrderedDict
 
 
@@ -59,7 +60,24 @@ class MLP(nn.Module):
         #######################
         # PUT YOUR CODE HERE  #
         #######################
-        pass
+
+        super().__init__()
+
+        layers = []
+        input_size = n_inputs
+
+        for i , n_out in enumerate(n_hidden):
+            if i == 0:
+                layer = nn.Linear(input_size, n_out, True)
+            else:
+                layer = nn.Linear(n_hidden[i - 1], n_out)
+            nn.init.kaiming_normal_(layer.weight)  # Kaiming initialization
+            layers.append(layer)
+            layers.append(nn.ELU())
+        self.layers = nn.ModuleList(layers)
+        #No softmax layer is needed here. Look at the CrossEntropyLoss module for loss calculation. 
+        
+        
         #######################
         # END OF YOUR CODE    #
         #######################
@@ -81,6 +99,11 @@ class MLP(nn.Module):
         #######################
         # PUT YOUR CODE HERE  #
         #######################
+
+      
+        out = torch.flatten(x, start_dim=1)
+        for layer in self.layers:
+            out = layer.forward(out)
 
         #######################
         # END OF YOUR CODE    #

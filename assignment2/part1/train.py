@@ -21,8 +21,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.utils.data as data
 import torchvision.models as models
-
-from cifar100_utils import get_train_validation_set, get_test_set, set_dataset
+from torchvision.models import ResNet18_Weights
+from cifar100_utils import get_train_validation_set, get_test_set, add_augmentation
 
 
 def set_seed(seed):
@@ -34,8 +34,12 @@ def set_seed(seed):
     if torch.cuda.is_available():
         torch.cuda.manual_seed(seed)
         torch.cuda.manual_seed_all(seed)
+    elif torch.backends.mps.is_available():
+        torch.mps.manual_seed(seed)
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
+
+    print(torch.device)
 
 
 def get_model(num_classes=100):
@@ -52,16 +56,21 @@ def get_model(num_classes=100):
     #######################
 
     # Get the pretrained ResNet18 model on ImageNet from torchvision.models
-    pass
+    resnet18 = models.resnet18(weights=ResNet18_Weights.IMAGENET1K_V1)
 
     # Randomly initialize and modify the model's last layer for CIFAR100.
-    pass
+    num_ftrs = resnet18.fc.in_features
+    resnet18.fc = nn.Linear(num_ftrs, num_classes)
+    nn.init.normal_(resnet18.fc.weight, mean=0, std=0.01)
+    nn.init.zeros_(resnet18.fc.bias)
+    model = resnet18
 
     #######################
     # END OF YOUR CODE    #
     #######################
 
     return model
+
 
 
 def train_model(model, lr, batch_size, epochs, data_dir, checkpoint_name, device, augmentation_name=None):
@@ -84,17 +93,49 @@ def train_model(model, lr, batch_size, epochs, data_dir, checkpoint_name, device
     # PUT YOUR CODE HERE  #
     #######################
 
-    # Load the datasets
-    pass
+    # # Load the datasets
+    train_set, val_set = get_train_validation_set(data_dir, augmentation_name=augmentation_name)
+    train_loader = data.DataLoader(train_set, batch_size=batch_size, shuffle=True)
+    val_loader = data.DataLoader(val_set, batch_size=batch_size, shuffle=False)
 
-    # Initialize the optimizer (Adam) to train the last layer of the model.
-    pass
+    # # Set model to training mode and move to the device.
+    model.to(device)
 
-    # Training loop with validation after each epoch. Save the best model.
-    pass
+    for param in model.parameters():
+        param.requires_grad = False
+    for param in model.fc.parameters():
+        param.requires_grad = True # only train the last layer
+    # # Initialize the optimizer (Adam) to train the last layer of the model.
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
-    # Load the best model on val accuracy and return it.
-    pass
+    cross_entropy_loss = nn.CrossEntropyLoss()
+
+    # # Training loop with validation after each epoch. Save the best model.
+    best_acc = 0.0
+    print('Training...')
+    print('epochs: {}'.format(epochs))
+    for epoch in range(epochs):
+        model.train()
+        for inputs, labels in train_loader:
+            inputs, labels = inputs.to(device), labels.to(device)
+            optimizer.zero_grad()
+            outputs = model(inputs)
+            loss = cross_entropy_loss(outputs, labels)
+            loss.backward()
+            optimizer.step()
+            print('epoch: {}, loss: {:.4f}'.format(epoch, loss.item()))
+
+        val_acc = evaluate_model(model, val_loader, device)
+        if val_acc > best_acc:
+            best_acc = best_acc
+            torch.save(model.state_dict(), checkpoint_name)
+            print(f'epoch: {epoch}, val_acc: {val_acc}')
+    model.load_state_dict(torch.load(checkpoint_name))
+
+    # # Training loop with validation after each epoch. Save the best model.
+
+
+
 
     #######################
     # END OF YOUR CODE    #
@@ -119,11 +160,20 @@ def evaluate_model(model, data_loader, device):
     # PUT YOUR CODE HERE  #
     #######################
     # Set model to evaluation mode (Remember to set it back to training mode in the training loop)
-    pass
+    model.eval()
 
+    correct = 0
+    total = 0
     # Loop over the dataset and compute the accuracy. Return the accuracy
-    # Remember to use torch.no_grad().
-    pass
+    with torch.no_grad():
+        for inputs, labels in data_loader:
+            inputs, labels = inputs.to(device), labels.to(device)
+            outputs = model(inputs)
+            correct += (outputs.argmax(dim=-1)==labels).sum().item()
+            total += labels.shape[0]
+
+
+    accuracy = correct / total
 
     #######################
     # END OF YOUR CODE    #
@@ -148,22 +198,39 @@ def main(lr, batch_size, epochs, data_dir, seed, augmentation_name, test_noise):
     # PUT YOUR CODE HERE  #
     #######################
     # Set the seed for reproducibility
-    pass
+    set_seed(seed)
 
     # Set the device to use for training
-    pass
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+    elif torch.backends.mps.is_available():
+        device = torch.device("mps")
+    else:
+        device = torch.device("cpu")
 
     # Load the model
-    pass
+    model = get_model()
+    model.to(device)
+
+    augmentation = None
 
     # Get the augmentation to use
-    pass
+    if augmentation_name is not None:
+        augmentation = add_augmentation(augmentation_name)
 
     # Train the model
-    pass
+    model = train_model(model, lr, batch_size, epochs, data_dir, "model.pth", device, augmentation)
+    # load the best model
+    model.load_state_dict(torch.load("model.pth"))
+    print("Done training!")
 
     # Evaluate the model on the test set
-    pass
+    test_set = get_test_set(data_dir, test_noise)
+    test_loader = data.DataLoader(test_set, batch_size=batch_size, shuffle=False)
+
+    test_acc = evaluate_model(model, test_loader, device)
+
+    print(f"Accuracy on the test set: {test_acc * 100:.2f}%")
 
     #######################
     # END OF YOUR CODE    #

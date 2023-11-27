@@ -27,7 +27,10 @@ import os
 from copy import deepcopy
 from tqdm.auto import tqdm
 from mlp_pytorch import MLP
+import matplotlib.pyplot as plt
 import cifar10_utils
+from train_mlp_numpy import confusion_matrix as np_confusion_matrix, confusion_matrix_to_metrics as np_confusion_matrix_to_metrics
+
 
 import torch
 import torch.nn as nn
@@ -50,6 +53,9 @@ def confusion_matrix(predictions, targets):
     # PUT YOUR CODE HERE  #
     #######################
 
+    conf_mat = np_confusion_matrix(predictions, targets)
+      
+
     #######################
     # END OF YOUR CODE    #
     #######################
@@ -70,6 +76,8 @@ def confusion_matrix_to_metrics(confusion_matrix, beta=1.):
     #######################
     # PUT YOUR CODE HERE  #
     #######################
+
+    metrics = np_confusion_matrix_to_metrics(confusion_matrix, beta=beta)
 
     #######################
     # END OF YOUR CODE    #
@@ -96,7 +104,27 @@ def evaluate_model(model, data_loader, num_classes=10):
 
     #######################
     # PUT YOUR CODE HERE  #
-    #######################
+    ######################
+    beta_list = [0.1, 1, 10]
+    model.eval()
+    data_y = []
+    data_prob = []
+    device = torch.device('mps') if torch.backends.mps.is_available()  else torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    confusion_mat = np.zeros((num_classes, num_classes))
+    for image, label in data_loader:
+        x, y = image.to(device), label.to(device)
+        with torch.no_grad():
+          preds = model(x)
+          data_y.extend(y.tolist())
+          data_prob.extend(preds.tolist())
+    confusion_mat += confusion_matrix(preds.cpu().numpy(), y.cpu().numpy())
+    metrics = confusion_matrix_to_metrics(confusion_mat, beta=1)
+    for beta in beta_list:
+        metrics = confusion_matrix_to_metrics(confusion_mat, beta=beta)
+ 
+
+
+
 
     #######################
     # END OF YOUR CODE    #
@@ -145,10 +173,18 @@ def train(hidden_dims, lr, use_batch_norm, batch_size, epochs, seed, data_dir):
         torch.cuda.manual_seed_all(seed)
         torch.backends.cudnn.determinstic = True
         torch.backends.cudnn.benchmark = False
+    elif torch.backends.mps.is_available():
+      torch.mps.manual_seed(seed)
+      device = torch.device('mps')
+    else:
+      device = torch.device('cpu')
+
 
     # Set default device
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    # device = torch.device('cuda' if torch.cuda.is_available() elif torch.backends.mps.is_available() else 'cpu')
 
+    # Set default device
+    device = torch.device('mps') if torch.backends.mps.is_available() else torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     # Loading the dataset
     cifar10 = cifar10_utils.get_cifar10(data_dir)
     cifar10_loader = cifar10_utils.get_dataloader(cifar10, batch_size=batch_size,
@@ -158,16 +194,113 @@ def train(hidden_dims, lr, use_batch_norm, batch_size, epochs, seed, data_dir):
     # PUT YOUR CODE HERE  #
     #######################
 
-    # TODO: Initialize model and loss module
-    model = ...
-    loss_module = ...
-    # TODO: Training loop including validation
-    # TODO: Do optimization with the simple SGD optimizer
-    val_accuracies = ...
-    # TODO: Test best model
-    test_accuracy = ...
-    # TODO: Add any information you might want to save for plotting
-    logging_info = ...
+    image_size = 3 * 32 * 32
+
+    class_count = 10
+
+
+    best_accuracy = 0
+    best_model = None
+    train_accuracies = []
+    test_accuracies = []
+    val_accuracies = []
+    train_losses = []
+    val_losses = []
+
+
+    # # TODO: Initialize model and loss module
+    model = MLP(image_size, hidden_dims, class_count, use_batch_norm).to(device)
+    loss_module = nn.CrossEntropyLoss()
+
+
+    # # TODO: Training loop including validation\       
+   
+
+    model = MLP(image_size, hidden_dims, 10).to(device)
+
+    loss_module = nn.CrossEntropyLoss()
+    optimizer = optim.SGD(model.parameters(), lr=lr)
+
+    for epoch in range(epochs):
+        model.train()
+        train_loss = 0.0
+        for images, labels in tqdm(cifar10_loader['train']):
+            images, labels = images.to(device), labels.to(device)
+            optimizer.zero_grad()
+            outputs = model(images)
+            loss = loss_module(outputs, labels)
+            loss.backward()
+            optimizer.step()
+            train_loss += loss.item()  # Accumulate the loss
+
+        train_losses.append(train_loss / len(cifar10_loader['train']))
+        # train_metrics = evaluate_model(model, cifar10_loader['train'], 10)
+        # train_accuracies.append(train_metrics['accuracy'])
+
+        model.eval()
+        val_loss = 0.0
+        val_accuracy = 0.0
+        with torch.no_grad():
+            for images, labels in cifar10_loader['validation']:
+                images, labels = images.to(device), labels.to(device)
+                outputs = model(images)
+                loss = loss_module(outputs, labels)
+                val_loss += loss.item()
+
+        val_losses.append(val_loss / len(cifar10_loader['validation']))
+        val_accuracy = evaluate_model(model, cifar10_loader['validation'], 10)['accuracy']
+        val_accuracies.append(val_accuracy)
+        test_metrics  = evaluate_model(model, cifar10_loader['test'], 10)
+        test_accuracies.append(test_metrics['accuracy'])
+        
+
+        if val_accuracy > best_accuracy:
+            best_accuracy = val_accuracy
+            best_model = deepcopy(model)
+            # Save your best model
+            torch.save(best_model.state_dict(), 'best_model.pth')
+
+        print(f'Epoch {epoch + 1}/{epochs}, Training Loss: {train_losses[-1]}, Validation Accuracy: {val_accuracy}')
+
+     # TODO: Test best model
+    test_accuracy = evaluate_model(best_model, cifar10_loader['test'], 10)['accuracy']
+    print(f'Test Accuracy: {test_accuracy}')
+    print(f'Highest test accuracy:{max(test_accuracies)}')
+    # Model appears to be overfitting, as the test accuracy is lower than the validation accuracy.
+
+    logging_info = {
+        'train_losses': train_losses,
+        'train_accuracies': train_accuracies,
+        'val_losses': val_losses,
+        'val_accuracies': val_accuracies,
+        'best_val_accuracy': best_accuracy,
+        'test_accuracy': test_accuracy,
+    }
+ 
+
+    plt.figure(figsize=(10, 8))
+    plt.plot(train_losses, label='Train Loss')
+    plt.plot(val_losses, label='Validation Loss')
+    plt.xlabel('Epoch')  
+    plt.ylabel('Loss')
+    plt.legend()
+    plt.savefig('loss_pytorch.png')
+    plt.show()  
+
+
+    plt.figure(figsize=(10, 8))
+    plt.plot(test_accuracies, label='Test Accuracy')
+    plt.plot(val_accuracies, label='Validation Accuracy')
+    plt.xlabel('Epoch')
+    plt.ylabel('Accuracy')
+    plt.legend()
+    plt.savefig('accuracy_pytorch.png')
+    plt.show()
+
+
+    
+
+
     #######################
     # END OF YOUR CODE    #
     #######################

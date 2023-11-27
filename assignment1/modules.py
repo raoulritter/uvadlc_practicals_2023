@@ -51,6 +51,20 @@ class LinearModule(object):
         # PUT YOUR CODE HERE  #
         #######################
 
+
+        #Initialize weight parameters using Kaiming initialization
+
+        self.params = {
+          'weight': np.random.normal(0, np.sqrt(2/in_features), (out_features, in_features)),
+          'bias': np.zeros((1, out_features)),
+        }
+
+        self.grads = {
+          'weight': np.zeros(self.params['weight'].shape),
+          'bias': np.zeros(self.params['bias'].shape),
+        }
+
+
         #######################
         # END OF YOUR CODE    #
         #######################
@@ -73,6 +87,11 @@ class LinearModule(object):
         #######################
         # PUT YOUR CODE HERE  #
         #######################
+        self.input = x  # Store input for backward pass
+
+        out = x @ self.params['weight'].T + self.params['bias'] 
+
+        self.output = out 
 
         #######################
         # END OF YOUR CODE    #
@@ -98,6 +117,20 @@ class LinearModule(object):
         # PUT YOUR CODE HERE  #
         #######################
 
+        # Gradient of weight
+        self.grads['weight'] = dout.T @ self.input
+
+        # Gradient of bias from the sum of the gradients of the loss with respect to the output
+        self.grads['bias'] = np.sum(dout, axis=0)
+
+        
+        dx = dout @ self.params['weight']
+
+        
+
+
+
+
         #######################
         # END OF YOUR CODE    #
         #######################
@@ -114,7 +147,16 @@ class LinearModule(object):
         #######################
         # PUT YOUR CODE HERE  #
         #######################
-        pass
+
+        #Set any caches you have to None.
+        # self.x = None
+
+        self.input = None
+        self.output = None
+        self.dout = None
+        self.dx = None
+        self.x = None
+
         #######################
         # END OF YOUR CODE    #
         #######################
@@ -144,6 +186,13 @@ class ELUModule(object):
         # PUT YOUR CODE HERE  #
         #######################
 
+        #Store intermediate variables inside the object. They can be used in backward pass computation.
+        self.input = x
+
+        out = np.where(x > 0, x, np.exp(x) - 1)
+
+
+
         #######################
         # END OF YOUR CODE    #
         #######################
@@ -166,6 +215,9 @@ class ELUModule(object):
         # PUT YOUR CODE HERE  #
         #######################
 
+
+        dx = np.where(self.input > 0, dout, dout * np.exp(self.input))
+
         #######################
         # END OF YOUR CODE    #
         #######################
@@ -182,7 +234,12 @@ class ELUModule(object):
         #######################
         # PUT YOUR CODE HERE  #
         #######################
-        pass
+        
+        self.input = None
+        self.output = None
+        self.dout = None
+        self.dx = None
+
         #######################
         # END OF YOUR CODE    #
         #######################
@@ -212,6 +269,13 @@ class SoftMaxModule(object):
         # PUT YOUR CODE HERE  #
         #######################
 
+        #Copy Paste from https://timvieira.github.io/blog/post/2014/02/11/exp-normalize-trick/
+        self.input = x
+        b = x.max(axis=1, keepdims=True)
+        y = np.exp(x - b)
+        out = y / y.sum(axis=1, keepdims=True)
+        self.output = out # Store output for backward pass
+
         #######################
         # END OF YOUR CODE    #
         #######################
@@ -230,9 +294,23 @@ class SoftMaxModule(object):
         Implement backward pass of the module.
         """
 
+
         #######################
         # PUT YOUR CODE HERE  #
         #######################
+
+      
+
+
+        identity = np.eye(self.output.shape[1]) # Identity matrix based off of the number of classes
+
+        diagonal = np.einsum('ij,jk->ijk', self.output, identity) # Diagonal matrix with softmax output on the diagonal
+        outer_product = np.einsum('ij,ik->ijk', self.output, self.output) # Outer product of softmax output
+  
+        jacobian_batch = diagonal - outer_product
+
+        dx = np.einsum('ij,ijk->ik', dout, jacobian_batch)
+        
 
         #######################
         # END OF YOUR CODE    #
@@ -251,7 +329,14 @@ class SoftMaxModule(object):
         #######################
         # PUT YOUR CODE HERE  #
         #######################
-        pass
+        
+        self.input = None
+        self.output = None
+        self.dout = None
+        self.dx = None
+
+
+
         #######################
         # END OF YOUR CODE    #
         #######################
@@ -279,6 +364,17 @@ class CrossEntropyModule(object):
         # PUT YOUR CODE HERE  #
         #######################
 
+        self.input = x
+        num_class = x.shape[1]
+        y_one_hot = np.eye(num_class)[y]
+
+        self.labels = y_one_hot
+
+
+        #calculate cross entropy loss
+        out = -np.sum(y_one_hot * np.log(x)) / x.shape[0]
+
+        
         #######################
         # END OF YOUR CODE    #
         #######################
@@ -301,6 +397,11 @@ class CrossEntropyModule(object):
         #######################
         # PUT YOUR CODE HERE  #
         #######################
+
+        #calculate gradient of the loss with the respect to the input x.
+        num_class = x.shape[1]
+        y_one = np.eye(num_class)[y]
+        dx = -(y_one / (x)) / x.shape[0]
 
         #######################
         # END OF YOUR CODE    #
