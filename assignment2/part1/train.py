@@ -73,7 +73,7 @@ def get_model(num_classes=100):
 
 
 
-def train_model(model, lr, batch_size, epochs, data_dir, checkpoint_name, device, augmentation_name=None):
+def train_model(model, lr, batch_size, epochs, data_dir, checkpoint_name, device, augmentation_name=None, ):
     """
     Trains a given model architecture for the specified hyperparameters.
 
@@ -216,16 +216,27 @@ def main(lr, batch_size, epochs, data_dir, seed, augmentation_name, test_noise):
 
     # Get the augmentation to use
     if augmentation_name is not None:
-        augmentation = add_augmentation(augmentation_name)
+        transform_list = []
+        augmentation = add_augmentation(augmentation_name, transform_list)
+        print("Added augmentation: ", augmentation_name)
 
     # Train the model
-    model = train_model(model, lr, batch_size, epochs, data_dir, "model.pth", device, augmentation)
+    # model = train_model(model, lr, batch_size, epochs, data_dir, "model_augment.pth", device, augmentation)
+    def load_checkpoint(model, checkpoint_name, device):
+        model.load_state_dict(torch.load(checkpoint_name))
+        model.to(device)
+        return model
+    model = load_checkpoint(model, "model.pth", device)
+
+
+
     # load the best model
-    model.load_state_dict(torch.load("model.pth"))
+    model.load_state_dict(torch.load("model_augment.pth")) if augmentation_name is not None else model.load_state_dict(torch.load("model.pth"))
     print("Done training!")
 
     # Evaluate the model on the test set
     test_set = get_test_set(data_dir, test_noise)
+    print(test_noise, augmentation_name)
     test_loader = data.DataLoader(test_set, batch_size=batch_size, shuffle=False)
 
     test_acc = evaluate_model(model, test_loader, device)
@@ -252,8 +263,6 @@ if __name__ == '__main__':
                         help='Seed to use for reproducing results')
     parser.add_argument('--data_dir', default='data/', type=str,
                         help='Data directory where to store/find the CIFAR100 dataset.')
-    parser.add_argument('--dataset', default='cifar100', type=str, choices=['cifar100', 'cifar10'],
-                        help='Dataset to use.')
     parser.add_argument('--augmentation_name', default=None, type=str,
                         help='Augmentation to use.')
     parser.add_argument('--test_noise', default=False, action="store_true",
@@ -261,5 +270,4 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     kwargs = vars(args)
-    set_dataset(kwargs.pop('dataset'))
     main(**kwargs)

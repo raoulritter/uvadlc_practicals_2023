@@ -53,7 +53,9 @@ class AddGaussianNoise(torch.nn.Module):
         # - Then, you can transform z s.t. it is sampled from N(self.mean, self.std)
         # - Finally, you can add the noise to the image.
 
-        raise NotImplementedError
+        noise = torch.randn(img.size()) * self.std + self.mean
+        img = img + noise
+        return img
         #######################
         # END OF YOUR CODE    #
         #######################
@@ -72,11 +74,19 @@ def add_augmentation(augmentation_name, transform_list):
     #######################
 
     # Create a new transformation based on the augmentation_name.
-    pass
-
-    # Add the new transformation to the list.
-    pass
-
+    if augmentation_name == 'test_noise':
+        transform_list.append(AddGaussianNoise())
+    elif augmentation_name == 'horizontal_flip':
+        transform_list.append(transforms.RandomHorizontalFlip())
+    elif augmentation_name == 'vertical_flip':
+        transform_list.append(transforms.RandomVerticalFlip())
+    elif augmentation_name == 'random_crop':
+        transform_list.append(transforms.RandomCrop(32, padding=4))
+    elif augmentation_name == 'random_rotation':
+        transform_list.append(transforms.RandomRotation(180))
+    else:
+        raise ValueError("augmentation_name should be either test_noise, horizontal_flip, vertical_flip or random_rotation")
+    print("Added augmentation: ", augmentation_name)
     #######################
     # END OF YOUR CODE    #
     #######################

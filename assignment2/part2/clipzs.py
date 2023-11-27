@@ -95,7 +95,12 @@ def parse_option():
     )
 
     args = parser.parse_args()
-    args.device = "cuda" if torch.cuda.is_available() else "cpu"
+    if torch.cuda.is_available(): 
+        args.device = "cuda" 
+    elif torch.backends.mps.is_available():
+        args.device = "mps" 
+    else: 
+        args.device = "cpu"
 
     return args
 
@@ -160,6 +165,12 @@ class ZeroshotCLIP(nn.Module):
         # Instructions:
         # - Given a list of prompts, compute the text features for each prompt.
 
+        
+        with torch.no_grad():
+            tokenize = clip.tokenize(prompts).to(device)
+            text_features = clip_model.encode_text(tokenize)
+            text_features = text_features / text_features.norm(dim=0)    
+
         # Steps:
         # - Tokenize each text prompt using CLIP's tokenizer.
         # - Compute the text features (encodings) for each prompt.
@@ -170,8 +181,8 @@ class ZeroshotCLIP(nn.Module):
         # - Read the CLIP API documentation for more details:
         #   https://github.com/openai/CLIP#api
 
-        # remove this line once you implement the function
-        raise NotImplementedError("Implement the precompute_text_features function.")
+
+        return text_features
 
         #######################
         # END OF YOUR CODE    #
@@ -205,12 +216,17 @@ class ZeroshotCLIP(nn.Module):
         #   You need to multiply the similarity logits with the logit scale (self.logit_scale).
         # - Return logits of shape (batch size, number of classes).
 
+        
         # Hint:
         # - Read the CLIP API documentation for more details:
         #   https://github.com/openai/CLIP#api
 
-        # remove this line once you implement the function
-        raise NotImplementedError("Implement the model_inference function.")
+        with torch.no_grad():
+            image_features = self.clip_model.encode_image(image)
+            image_features = image_features / image_features.norm(dim=-1, keepdim=True)
+            logit = self.logit_scale * image_features @ self.text_features.T
+            print(logit.shape)
+        return logit
 
         #######################
         # END OF YOUR CODE    #
@@ -372,7 +388,17 @@ def main():
     # - You can use the model_inference method of the ZeroshotCLIP class to get the logits
 
     # you can remove the following line once you have implemented the inference loop
-    raise NotImplementedError("Implement the inference loop")
+
+    for images, labels in tqdm(loader):
+        images = images.to(device)
+        labels = labels.to(device)
+        logits = clipzs.model_inference(images)
+        _, preds = logits.max(dim=1)
+        accuracy = (preds == labels).float().mean()
+        top1.update(accuracy, images.size(0))
+
+    #######################
+    # raise NotImplementedError("Implement the inference loop")
 
     #######################
     # END OF YOUR CODE    #
