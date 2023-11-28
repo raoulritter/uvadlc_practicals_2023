@@ -28,7 +28,7 @@ from torchvision.datasets import CIFAR10, CIFAR100
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 import torch.nn as nn
-from utils import AverageMeter, set_seed
+from utils import AverageMeter, set_seed, accuracy
 
 
 DATASET = {"cifar10": CIFAR10, "cifar100": CIFAR100}
@@ -224,9 +224,8 @@ class ZeroshotCLIP(nn.Module):
         with torch.no_grad():
             image_features = self.clip_model.encode_image(image)
             image_features = image_features / image_features.norm(dim=-1, keepdim=True)
-            logit = self.logit_scale * image_features @ self.text_features.T
-            print(logit.shape)
-        return logit
+            logits = self.logit_scale * (image_features @ self.text_features.T)
+        return logits
 
         #######################
         # END OF YOUR CODE    #
@@ -393,12 +392,11 @@ def main():
         images = images.to(device)
         labels = labels.to(device)
         logits = clipzs.model_inference(images)
-        _, preds = logits.max(dim=1)
+        preds = logits.argmax(dim=-1)
         accuracy = (preds == labels).float().mean()
         top1.update(accuracy, images.size(0))
 
-    #######################
-    # raise NotImplementedError("Implement the inference loop")
+
 
     #######################
     # END OF YOUR CODE    #
