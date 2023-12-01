@@ -178,8 +178,14 @@ def main():
         # PUT YOUR CODE HERE  #
         #######################
         # TODO: Define `classnames` as a list of 10 + 100 class labels from CIFAR10 and CIFAR100
+        # Hint: You can get the classnames from `cifar10_test.classes` and `cifar100_test.classes`
 
-        raise NotImplementedError
+        classnames = None
+        first_10_cifar = cifar10_test.classes[:10]        
+        first_100_cifar = cifar100_test.classes[:100]
+        classnames = first_10_cifar + first_100_cifar
+
+        
         #######################
         # END OF YOUR CODE    #
         #######################
@@ -207,7 +213,12 @@ def main():
         # TODO: Compute the text features (for each of the prompts defined above) using CLIP
         # Note: This is similar to the code you wrote in `clipzs.py`
 
-        raise NotImplementedError
+        with torch.no_grad():
+            tokenize = clip.tokenize(prompts).cuda()
+            text_features = clip_model.encode_text(tokenize)
+            text_features = text_features / text_features.norm(dim=0)    
+
+
         #######################
         # END OF YOUR CODE    #
         #######################
@@ -223,7 +234,8 @@ def main():
         # That is, if a class in CIFAR100 corresponded to '4', it should now correspond to '14'
         # Set the result of this to the attribute cifar100_test.targets to override them
 
-        raise NotImplementedError
+        cifar100_test.targets = [x + 10 for x in cifar100_test.targets]
+
         #######################
         # END OF YOUR CODE    #
         #######################
@@ -255,8 +267,9 @@ def main():
         # Hint:
         # - accurary_all = acc_cifar10 * (% of cifar10 samples) \
         #                  + acc_cifar100 * (% of cifar100 samples)
-
-        raise NotImplementedError
+        
+        weighted_accuracy = (acc_cifar10 * len(cifar10_test) + acc_cifar100 * len(cifar100_test)) / (len(cifar10_test) + len(cifar100_test))
+        accuracy_all = weighted_accuracy
         #######################
         # END OF YOUR CODE    #
         #######################

@@ -1,0 +1,155 @@
+============================================================================================== 
+Warning! Mixing Conda and module environments may lead to corruption of the
+user environment. 
+We do not recommend users mixing those two environments unless absolutely
+necessary. Note that 
+SURF does not provide any support for Conda environment.
+For more information, please refer to our software policy page:
+https://servicedesk.surf.nl/wiki/display/WIKI/Software+policy+Snellius+and+Lisa#SoftwarepolicySnelliusandLisa-UseofAnacondaandMinicondaenvironmentsonSnellius 
+
+Remember that many packages have already been installed on the system and can
+be loaded using 
+the 'module load <package__name>' command. If you are uncertain if a package is
+already available 
+on the system, please use 'module avail' or 'module spider' to search for it.
+============================================================================================== 
+Namespace(print_freq=10, save_freq=50, batch_size=128, num_workers=16, epochs=1000, square_size=8, optim='sgd', learning_rate=40, weight_decay=0, warmup=1000, momentum=0.9, patience=1000, model='clip', arch='ViT-B/32', prompt_type='visual_prompt', prompt_num=4, injection_layer=0, method='padding', prompt_size=0, text_prompt_template='This is a photo of a {}', root='./data', dataset='cifar100', image_size=224, test_noise=False, visualize_prompt=False, seed=0, model_dir='./save/models', image_dir='./save/images', filename='padding_0_cifar100_clip_ViT-B/32_sgd_lr_40_decay_0_bsz_128_warmup_1000_trial_1', trial=1, resume=None, evaluate=True, gpu=None, use_wandb=False, device='cuda', model_folder='./save/models/padding_0_cifar100_clip_ViT-B/32_sgd_lr_40_decay_0_bsz_128_warmup_1000_trial_1')
+Files already downloaded and verified
+Files already downloaded and verified
+Building custom CLIP
+Loading CLIP (backbone: ViT-B/32)
+List of prompts:
+['This is a photo of a apple',
+ 'This is a photo of a aquarium fish',
+ 'This is a photo of a baby',
+ 'This is a photo of a bear',
+ 'This is a photo of a beaver',
+ 'This is a photo of a bed',
+ 'This is a photo of a bee',
+ 'This is a photo of a beetle',
+ 'This is a photo of a bicycle',
+ 'This is a photo of a bottle',
+ 'This is a photo of a bowl',
+ 'This is a photo of a boy',
+ 'This is a photo of a bridge',
+ 'This is a photo of a bus',
+ 'This is a photo of a butterfly',
+ 'This is a photo of a camel',
+ 'This is a photo of a can',
+ 'This is a photo of a castle',
+ 'This is a photo of a caterpillar',
+ 'This is a photo of a cattle',
+ 'This is a photo of a chair',
+ 'This is a photo of a chimpanzee',
+ 'This is a photo of a clock',
+ 'This is a photo of a cloud',
+ 'This is a photo of a cockroach',
+ 'This is a photo of a couch',
+ 'This is a photo of a crab',
+ 'This is a photo of a crocodile',
+ 'This is a photo of a cup',
+ 'This is a photo of a dinosaur',
+ 'This is a photo of a dolphin',
+ 'This is a photo of a elephant',
+ 'This is a photo of a flatfish',
+ 'This is a photo of a forest',
+ 'This is a photo of a fox',
+ 'This is a photo of a girl',
+ 'This is a photo of a hamster',
+ 'This is a photo of a house',
+ 'This is a photo of a kangaroo',
+ 'This is a photo of a keyboard',
+ 'This is a photo of a lamp',
+ 'This is a photo of a lawn mower',
+ 'This is a photo of a leopard',
+ 'This is a photo of a lion',
+ 'This is a photo of a lizard',
+ 'This is a photo of a lobster',
+ 'This is a photo of a man',
+ 'This is a photo of a maple tree',
+ 'This is a photo of a motorcycle',
+ 'This is a photo of a mountain',
+ 'This is a photo of a mouse',
+ 'This is a photo of a mushroom',
+ 'This is a photo of a oak tree',
+ 'This is a photo of a orange',
+ 'This is a photo of a orchid',
+ 'This is a photo of a otter',
+ 'This is a photo of a palm tree',
+ 'This is a photo of a pear',
+ 'This is a photo of a pickup truck',
+ 'This is a photo of a pine tree',
+ 'This is a photo of a plain',
+ 'This is a photo of a plate',
+ 'This is a photo of a poppy',
+ 'This is a photo of a porcupine',
+ 'This is a photo of a possum',
+ 'This is a photo of a rabbit',
+ 'This is a photo of a raccoon',
+ 'This is a photo of a ray',
+ 'This is a photo of a road',
+ 'This is a photo of a rocket',
+ 'This is a photo of a rose',
+ 'This is a photo of a sea',
+ 'This is a photo of a seal',
+ 'This is a photo of a shark',
+ 'This is a photo of a shrew',
+ 'This is a photo of a skunk',
+ 'This is a photo of a skyscraper',
+ 'This is a photo of a snail',
+ 'This is a photo of a snake',
+ 'This is a photo of a spider',
+ 'This is a photo of a squirrel',
+ 'This is a photo of a streetcar',
+ 'This is a photo of a sunflower',
+ 'This is a photo of a sweet pepper',
+ 'This is a photo of a table',
+ 'This is a photo of a tank',
+ 'This is a photo of a telephone',
+ 'This is a photo of a television',
+ 'This is a photo of a tiger',
+ 'This is a photo of a tractor',
+ 'This is a photo of a train',
+ 'This is a photo of a trout',
+ 'This is a photo of a tulip',
+ 'This is a photo of a turtle',
+ 'This is a photo of a wardrobe',
+ 'This is a photo of a whale',
+ 'This is a photo of a willow tree',
+ 'This is a photo of a wolf',
+ 'This is a photo of a woman',
+ 'This is a photo of a worm']
+Turning off gradients in both the image and the text encoder
+Parameters to be updated:
+("Parameters to be updated: {'prompt_learner.pad_up', "
+ "'prompt_learner.pad_left', 'prompt_learner.pad_right', "
+ "'prompt_learner.pad_down'}")
+Number of prompt parameters:  0
+Model evaluation w/o random noise
+  0%|          | 0/79 [00:00<?, ?it/s]/home/scur1245/.conda/envs/dl2023/lib/python3.11/site-packages/torch/nn/modules/conv.py:456: UserWarning: Applied workaround for CuDNN issue, install nvrtc.so (Triggered internally at /opt/conda/conda-bld/pytorch_1695392026823/work/aten/src/ATen/native/cudnn/Conv_v8.cpp:80.)
+  return F.conv2d(input, weight, bias, self.stride,
+  1%|▏         | 1/79 [00:01<02:15,  1.74s/it]  5%|▌         | 4/79 [00:01<00:27,  2.74it/s]  9%|▉         | 7/79 [00:02<00:13,  5.19it/s] 13%|█▎        | 10/79 [00:02<00:08,  7.83it/s] 16%|█▋        | 13/79 [00:02<00:06, 10.47it/s] 20%|██        | 16/79 [00:02<00:04, 12.95it/s] 24%|██▍       | 19/79 [00:02<00:03, 15.01it/s] 28%|██▊       | 22/79 [00:02<00:03, 16.94it/s] 32%|███▏      | 25/79 [00:02<00:02, 18.55it/s] 35%|███▌      | 28/79 [00:02<00:02, 19.81it/s] 39%|███▉      | 31/79 [00:03<00:02, 20.74it/s] 43%|████▎     | 34/79 [00:03<00:02, 21.42it/s] 47%|████▋     | 37/79 [00:03<00:01, 21.71it/s] 51%|█████     | 40/79 [00:03<00:01, 21.97it/s] 54%|█████▍    | 43/79 [00:03<00:01, 22.13it/s] 58%|█████▊    | 46/79 [00:03<00:01, 22.27it/s] 62%|██████▏   | 49/79 [00:03<00:01, 22.44it/s] 66%|██████▌   | 52/79 [00:03<00:01, 22.78it/s] 70%|██████▉   | 55/79 [00:04<00:01, 23.10it/s] 73%|███████▎  | 58/79 [00:04<00:00, 23.32it/s] 77%|███████▋  | 61/79 [00:04<00:00, 23.51it/s] 81%|████████  | 64/79 [00:04<00:00, 23.59it/s] 85%|████████▍ | 67/79 [00:04<00:00, 23.65it/s] 89%|████████▊ | 70/79 [00:04<00:00, 23.73it/s] 92%|█████████▏| 73/79 [00:04<00:00, 23.71it/s] 96%|█████████▌| 76/79 [00:04<00:00, 23.68it/s]100%|██████████| 79/79 [00:05<00:00, 21.53it/s]100%|██████████| 79/79 [00:05<00:00, 15.13it/s]
+Validate: [ 0/79]	Time  1.746 ( 1.746)	Loss 1.1387e+00 (1.1387e+00)	Prompt Acc@1  74.22 ( 74.22)
+Validate: [10/79]	Time  0.044 ( 0.199)	Loss 1.6309e+00 (1.4558e+00)	Prompt Acc@1  53.12 ( 62.93)
+Validate: [20/79]	Time  0.043 ( 0.125)	Loss 1.6309e+00 (1.4383e+00)	Prompt Acc@1  61.72 ( 63.10)
+Validate: [30/79]	Time  0.043 ( 0.099)	Loss 1.6465e+00 (1.4531e+00)	Prompt Acc@1  61.72 ( 62.68)
+Validate: [40/79]	Time  0.044 ( 0.085)	Loss 1.3877e+00 (1.4531e+00)	Prompt Acc@1  67.97 ( 63.17)
+Validate: [50/79]	Time  0.042 ( 0.077)	Loss 1.5820e+00 (1.4645e+00)	Prompt Acc@1  60.16 ( 62.96)
+Validate: [60/79]	Time  0.042 ( 0.071)	Loss 1.6465e+00 (1.4572e+00)	Prompt Acc@1  61.72 ( 63.03)
+Validate: [70/79]	Time  0.042 ( 0.067)	Loss 1.5635e+00 (1.4524e+00)	Prompt Acc@1  66.41 ( 63.22)
+ * Prompt Acc@1 63.120
+
+JOB STATISTICS
+==============
+Job ID: 4561658
+Cluster: snellius
+User/Group: scur1245/scur1245
+State: RUNNING
+Nodes: 1
+Cores per node: 18
+CPU Utilized: 00:00:00
+CPU Efficiency: 0.00% of 00:07:12 core-walltime
+Job Wall-clock time: 00:00:24
+Memory Utilized: 0.00 MB (estimated maximum)
+Memory Efficiency: 0.00% of 31.25 GB (31.25 GB/node)
+WARNING: Efficiency statistics may be misleading for RUNNING jobs.

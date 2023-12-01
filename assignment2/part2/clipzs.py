@@ -224,7 +224,7 @@ class ZeroshotCLIP(nn.Module):
         with torch.no_grad():
             image_features = self.clip_model.encode_image(image)
             image_features = image_features / image_features.norm(dim=-1, keepdim=True)
-            logits = self.logit_scale * (image_features @ self.text_features.T)
+            logits = self.logit_scale * image_features @ self.text_features.T
         return logits
 
         #######################
