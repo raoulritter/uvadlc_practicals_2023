@@ -60,7 +60,7 @@ def KLD(mean, log_std):
     #######################
     KLD = torch.exp(2 * log_std) + mean ** 2 - 1 - 2 * log_std
     KLD = 0.5 * torch.sum(KLD, dim=-1)
-    
+
     #######################
     # END OF YOUR CODE    #
     #######################
@@ -79,8 +79,7 @@ def elbo_to_bpd(elbo, img_shape):
     #######################
     # PUT YOUR CODE HERE  #
     #######################
-    bpd = None
-    raise NotImplementedError
+    bpd = elbo / (np.log(2) * np.prod(img_shape[1:]))
     #######################
     # END OF YOUR CODE    #
     #######################
@@ -111,8 +110,20 @@ def visualize_manifold(decoder, grid_size=20):
     #######################
     # PUT YOUR CODE HERE  #
     #######################
-    img_grid = None
-    raise NotImplementedError
+    percentiles = torch.linspace(0.5/grid_size, (grid_size-0.5)/grid_size, grid_size)
+    p1, p2 = torch.meshgrid(percentiles, percentiles)
+    percentiles = torch.stack([p1.flatten(), p2.flatten()], dim=-1)
+
+    # Use the inverse cumulative distribution function (icdf) to obtain z values at percentiles
+    z = torch.distributions.Normal(0, 1).icdf(percentiles)
+
+    # Pass the z values through the decoder and apply a softmax
+    decoded_imgs = torch.sigmoid(decoder(z))
+
+    # Reshape the decoded images and make a grid
+    decoded_imgs = decoded_imgs.view(-1, 1, 28, 28)
+    img_grid = make_grid(decoded_imgs, nrow=grid_size)
+
     #######################
     # END OF YOUR CODE    #
     #######################

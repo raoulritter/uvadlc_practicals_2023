@@ -41,17 +41,17 @@ class CNNEncoder(nn.Module):
         
         self.net = nn.Sequential(
             nn.Conv2d(num_input_channels, num_filters, kernel_size=3, padding=1, stride=2), # 32x32 => 16x16
-            nn.GeLu(),
+            nn.GELU(),
             nn.Conv2d(num_filters, num_filters, kernel_size=3, padding=1),
-            nn.GeLu(),
+            nn.GELU(),
             nn.Conv2d(num_filters, 2*num_filters, kernel_size=3, padding=1, stride=2), # 16x16 => 8x8
-            nn.GeLu(),
+            nn.GELU(),
             nn.Conv2d(2*num_filters, 2*num_filters, kernel_size=3, padding=1),
-            nn.GeLu(),
+            nn.GELU(),
             nn.Conv2d(2*num_filters, 2*num_filters, kernel_size=3, padding=1, stride=2), # 8x8 => 4x4
-            nn.GeLu(),
+            nn.GELU(),
             nn.Flatten(), # Image grid to single feature vector
-            nn.Linear(2*16*num_filters, z_dim)
+            nn.Linear(2*16*num_filters, 2* z_dim) # 2*16*num_filters => 2*z_dim
         )
         
         #######################
@@ -71,9 +71,7 @@ class CNNEncoder(nn.Module):
         #######################
         # PUT YOUR CODE HERE  #
         #######################
-        out = self.net(x)
-        mean = out[:, :z_dim]
-        log_std = out[:, z_dim:]
+        mean, log_std = self.net(x).chunk(2, dim=-1) # Split into mean and log_std
         #######################
         # END OF YOUR CODE    #
         #######################
@@ -101,19 +99,19 @@ class CNNDecoder(nn.Module):
         #######################
         self.net = nn.Sequential(
             nn.Linear(z_dim, 2*16*num_filters),
-            nn.GeLu(),
+            nn.GELU(),
             nn.Unflatten(1, (2*num_filters, 4, 4)),
             nn.ConvTranspose2d(2*num_filters, 2*num_filters, kernel_size=3, padding=1, stride=2, output_padding=1), # 4x4 => 8x8
-            nn.GeLu(),
+            nn.GELU(),
             nn.ConvTranspose2d(2*num_filters, 2*num_filters, kernel_size=3, padding=1), # 8x8 => 8x8
-            nn.GeLu(),
+            nn.GELU(),
             nn.ConvTranspose2d(2*num_filters, num_filters, kernel_size=3, padding=1, stride=2, output_padding=1), # 8x8 => 16x16
-            nn.GeLu(),
-            nn.ConvTranspose2d(num_filters, num_filters, kernel_size=3, padding=1), # 16x16 => 16x16
-            nn.GeLu(),
-            nn.ConvTranspose2d(num_filters, num_input_channels, kernel_size=3, padding=1, stride=2, output_padding=1), # 16x16 => 32x32
+            nn.GELU(),
+            nn.ConvTranspose2d(num_filters, num_filters, kernel_size=2, stride=2, padding=2), # 16x16 => 28x28
+            nn.GELU(),
+            nn.ConvTranspose2d(num_filters, num_input_channels, kernel_size=3, padding=1), # 28x28 => 28x28
+            nn.Tanh() # Output between -1 and 1
         )
-        
         #######################
         # END OF YOUR CODE    #
         #######################

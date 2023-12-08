@@ -70,9 +70,19 @@ class VAE(pl.LightningModule):
         #######################
         # PUT YOUR CODE HERE  #
         #######################
-        L_rec = 
-        L_reg = None
-        bpd = None
+
+        
+        mean, log_std = self.encoder(imgs)
+        z = sample_reparameterize(mean, torch.exp(log_std))
+        
+        x_hat = self.decoder(z)
+        
+        L_rec = F.cross_entropy(x_hat, imgs.squeeze(), reduction="sum") / imgs.shape[0]
+        
+        L_reg = torch.mean(KLD(mean, log_std))
+        elbo = L_rec + L_reg
+        bpd = elbo_to_bpd(elbo, imgs.shape)
+
         #######################
         # END OF YOUR CODE    #
         #######################
@@ -91,8 +101,12 @@ class VAE(pl.LightningModule):
         # PUT YOUR CODE HERE  #
         #######################
         # sample a new batch of random images
-        x_samples = 
-        
+        z = torch.randn(batch_size, self.hparams.z_dim)
+        x_samples = self.decoder(z)
+        x_samples = torch.argmax(x_samples, dim=1)
+        x_samples = x_samples.reshape(batch_size, 1, 28, 28)
+        x_samples = x_samples.float() / 15
+        # x_samples = torch.sigmoid(x_samples)        
         #######################
         # END OF YOUR CODE    #
         #######################
@@ -178,7 +192,7 @@ def train_vae(args):
 
     os.makedirs(args.log_dir, exist_ok=True)
     train_loader, val_loader, test_loader = mnist(batch_size=args.batch_size,
-                                                   num_workers=args.num_workers,
+                                                   num_workers=0,
                                                    root=args.data_dir)
 
     # Create a PyTorch Lightning trainer with the generation callback
