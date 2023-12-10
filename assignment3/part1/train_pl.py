@@ -101,12 +101,14 @@ class VAE(pl.LightningModule):
         # PUT YOUR CODE HERE  #
         #######################
         # sample a new batch of random images
-        z = torch.randn(batch_size, self.hparams.z_dim)
-        x_samples = self.decoder(z)
-        x_samples = torch.argmax(x_samples, dim=1)
-        x_samples = x_samples.reshape(batch_size, 1, 28, 28)
-        x_samples = x_samples.float() / 15
-        # x_samples = torch.sigmoid(x_samples)        
+        z = torch.randn((batch_size, self.hparams.z_dim)).to(self.decoder.device)
+        logits = self.decoder(z)
+        probabilities = torch.nn.functional.softmax(logits) # apply softmax across channels
+        probabilities = torch.permute(probabilities, (0, 2, 3, 1))
+        probabilities = torch.flatten(probabilities, end_dim=2)
+        x_samples = torch.multinomial(probabilities, 1).reshape(-1, 28, 28, 1) # sample from multinomial distribution
+        x_samples = torch.permute(x_samples, (0, 3, 1, 2)) # reshape to [B,C,H,W]
+        
         #######################
         # END OF YOUR CODE    #
         #######################
@@ -239,7 +241,7 @@ if __name__ == '__main__':
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     # Model hyperparameters
-    parser.add_argument('--z_dim', default=20, type=int,
+    parser.add_argument('--z_dim', default=2, type=int,
                         help='Dimensionality of latent space')
     parser.add_argument('--num_filters', default=32, type=int,
                         help='Number of channels/filters to use in the CNN encoder/decoder.')

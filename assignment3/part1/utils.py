@@ -111,20 +111,30 @@ def visualize_manifold(decoder, grid_size=20):
     #######################
     # PUT YOUR CODE HERE  #
     #######################
-    percentiles = torch.linspace(0.5/grid_size, (grid_size-0.5)/grid_size, grid_size)
-    p1, p2 = torch.meshgrid(percentiles, percentiles)
-    percentiles = torch.stack([p1.flatten(), p2.flatten()], dim=-1)
+    
+    percentiles = torch.Tensor([(i - 0.5) / grid_size for i in range(1, grid_size + 1)])
+    normal = torch.distributions.Normal(0, 1)
 
-    # Use the inverse cumulative distribution function (icdf) to obtain z values at percentiles
-    z = torch.distributions.Normal(0, 1).icdf(percentiles)
+    # Creating a meshgrid and applying the icdf
+    p1, p2 = torch.meshgrid(percentiles, percentiles, indexing="xy")
+    p1 = normal.icdf(p1)
+    p2 = normal.icdf(p2)
 
-    # Pass the z values through the decoder and apply a softmax
-    decoded_imgs = decoder(z)
-    decoded_imgs = torch.softmax(decoded_imgs)
+    # Stacking and flattening the z values
+    z = torch.stack([p1, p2], dim=-1)
+    z = torch.flatten(z, end_dim=-2)
 
-    # Reshape the decoded images and make a grid
-    decoded_imgs = decoded_imgs.view(-1, 1, 28, 28)
-    img_grid = make_grid(decoded_imgs, nrow=grid_size)
+    # Decoding z values and applying softmax
+    logits = decoder(z)
+    probabilities = torch.nn.functional.softmax(logits, dim=1)
+    probabilities = torch.permute(probabilities, (0, 2, 3, 1))
+    probabilities = torch.flatten(probabilities, end_dim=2)
+
+    x_samples = torch.multinomial(probabilities, 1).reshape(-1, 28, 28, 1)
+    x_samples = torch.permute(x_samples, (0, 3, 1, 2))
+
+    img_grid = make_grid(x_samples, nrow=grid_size).float()
+
     
 
     #######################
