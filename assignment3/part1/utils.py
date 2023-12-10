@@ -37,6 +37,7 @@ def sample_reparameterize(mean, std):
     #######################
     eps = torch.randn_like(std)
     z = mean + eps * std
+    z.to(mean.device)
     #######################
     # END OF YOUR CODE    #
     #######################
@@ -118,11 +119,13 @@ def visualize_manifold(decoder, grid_size=20):
     z = torch.distributions.Normal(0, 1).icdf(percentiles)
 
     # Pass the z values through the decoder and apply a softmax
-    decoded_imgs = torch.sigmoid(decoder(z))
+    decoded_imgs = decoder(z)
+    decoded_imgs = torch.softmax(decoded_imgs)
 
     # Reshape the decoded images and make a grid
     decoded_imgs = decoded_imgs.view(-1, 1, 28, 28)
     img_grid = make_grid(decoded_imgs, nrow=grid_size)
+    
 
     #######################
     # END OF YOUR CODE    #

@@ -110,7 +110,7 @@ class CNNDecoder(nn.Module):
             nn.ConvTranspose2d(num_filters, num_filters, kernel_size=2, stride=2, padding=2), # 16x16 => 28x28
             nn.GELU(),
             nn.ConvTranspose2d(num_filters, num_input_channels, kernel_size=3, padding=1), # 28x28 => 28x28
-            nn.Tanh() # Output between -1 and 1
+            # nn.Tanh() # Output between -1 and 1
         )
         #######################
         # END OF YOUR CODE    #
@@ -129,6 +129,7 @@ class CNNDecoder(nn.Module):
         #######################
         # PUT YOUR CODE HERE  #
         #######################
+        z = z.to(self.device)
         x = self.net(z)
         #######################
         # END OF YOUR CODE    #
