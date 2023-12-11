@@ -90,7 +90,21 @@ class CausalSelfAttention(nn.Module):
         #######################
         # PUT YOUR CODE HERE  #
         #######################
-        raise NotImplementedError
+        attn_weights = torch.matmul(q, k.transpose(-2, -1)) / math.sqrt(n_embd // self.n_head)
+
+        if self.mask is not None:
+            attn_weights = attn_weights.masked_fill(self.mask[:, :, :seq_len, :seq_len] == 0, float('-inf'))
+
+        
+        attn_weights = nn.functional.softmax(attn_weights, dim=-1) #
+
+        # Apply dropout
+        attn_weights = self.attn_dropout(attn_weights)
+
+        y = torch.matmul(attn_weights, v) # (B, nh, T, hs)
+        
+        
+        
         #######################
         # END OF YOUR CODE    #
         #######################
@@ -392,7 +406,20 @@ class GPT(nn.Module):
             #######################
             # PUT YOUR CODE HERE  #
             #######################
-            raise NotImplementedError
+            logits = self(idx_cond)[:, -1, :] / temperature
+
+            if top_k is not None:
+                indices_to_remove = logits < torch.topk(logits, top_k)[0][..., -1, None]
+                logits[indices_to_remove] = float('-inf')
+
+            probs = F.softmax(logits, dim=-1)
+
+            if do_sample:
+                next_token = torch.multinomial(probs, num_samples=1)
+            else:
+                next_token = torch.argmax(probs, dim=-1).unsqueeze(-1)
+
+            idx = torch.cat((idx, next_token), dim=1)
             #######################
             # END OF YOUR CODE    #
             #######################
