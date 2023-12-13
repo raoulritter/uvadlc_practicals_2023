@@ -96,12 +96,13 @@ class CausalSelfAttention(nn.Module):
             attn_weights = attn_weights.masked_fill(self.mask[:, :, :seq_len, :seq_len] == 0, float('-inf'))
 
         
-        attn_weights = nn.functional.softmax(attn_weights, dim=-1) #
+        attn_weights = F.softmax(attn_weights, dim=-1) #
 
         # Apply dropout
         attn_weights = self.attn_dropout(attn_weights)
 
-        y = torch.matmul(attn_weights, v) # (B, nh, T, hs)
+        # Apply attention to the values
+        y = torch.matmul(attn_weights, v)
         
         
         
@@ -403,6 +404,7 @@ class GPT(nn.Module):
             # - apply softmax to convert logits to (normalized) probabilities
             # - either sample from the distribution or take the most likely element
             # - append sampled index to the running sequence and continue
+            
             #######################
             # PUT YOUR CODE HERE  #
             #######################
